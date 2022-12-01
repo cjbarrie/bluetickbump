@@ -8,6 +8,11 @@ library(tsibble)
 library(modelsummary)
 
 tdf <- read_fst("data/processed/blue-ranked-tweetsALL.fst")
+ids <- tdf %>%
+  pull(tweet_id)
+write.table(ids, "public_data/tweetIDs-ranked.txt", col.names = F, row.names = F,
+            quote = F)
+
 tdf$username <- tdf$user_username
 
 tdf_tweetdays <- tdf %>%
@@ -25,91 +30,24 @@ tdf_tweetdays <- tdf %>%
 
 tdf_tweetdays <- tdf_tweetdays %>%
   mutate(yearmon = as.Date(as.yearmon(date)),
-         yearwk = as.Date(yearweek(date)))
+         yearwk = as.Date(yearweek(date))) %>%
+  filter(date <= "2022-11-27")
 
 tdf_tweetdays$musk <- ifelse(tdf_tweetdays$date>="2022-10-27" & tdf_tweetdays$date <"2022-11-09", 1, 0)
 tdf_tweetdays$twitblue <- ifelse(tdf_tweetdays$date>="2022-11-09", 1, 0)
 
 saveRDS(tdf_tweetdays, "data/processed/tdf_tweetdays-ranked.rds")
 
-tdf_tweetdays$pmusk <- ifelse(tdf_tweetdays$date>="2022-10-27", 1, 0)
+tdf_tweetdays_public <- tdf_tweetdays
 
+tdf_tweetdays_public$userid <- sapply(tdf_tweetdays_public$username, 
+                                      digest::digest, 
+                                      algo = "md5")
 
-baseline1 <- feols(log(sum_rts) ~ pmusk + log(sum_tweets) |
-                     username,
-                   data = tdf_tweetdays)
+tdf_tweetdays_public <- tdf_tweetdays_public %>%
+  select(-username)
 
-baseline2 <- feols(log(sum_likes) ~ pmusk + log(sum_tweets) |
-                     username,
-                   data = tdf_tweetdays)
-
-# robust1 <- feols(log(sum_rts) ~ twitblue + musk + log(sum_tweets) |
-#                                 username + yearmon,
-#                               data = tdf_tweetdays)
-# 
-# robust2 <- feols(log(sum_likes) ~ twitblue + musk + log(sum_tweets) |
-#                      username + yearmon,
-#                    data = tdf_tweetdays)
-
-# linearHypothesis(robust1, c("musk = twitblue" ))
-
-
-# baseline1 <- fepois(sum_rts ~ twitblue + sum_tweets |
-#                      username + yearmon,
-#                    data = tdf_tweetdays)
-
-# baseline1 <- fenegbin(sum_rts ~ twitblue + musk + log(sum_tweets) |
-#                      username + yearmon,
-#                    data = tdf_tweetdays)
-
-gm <- tibble::tribble(
-  ~raw,        ~clean,          ~fmt,
-  # "r.squared", "R2",            2,
-  "nobs",      "Observations",             0,
-  "FE: username",  "User fixed effect",      0)
-
-modelsummary(models = list("Retweets" = baseline1,
-                           "Likes" = baseline2),
-             output = "latex",
-             coef_rename = c(
-               "pmusk" = "Post-Musk acquisition",
-               "log(sum_rts)" = "Retweets (logged sum)",
-               "log(sum_tweets)" = "Tweets (logged sum)"),
-             gof_map = gm,
-             notes = list('Outcomes are logged retweets and likes',
-                          'Standard errors clustered by user'),
-             title = 'Effect of Musk acquisition on contentious user engagement',
-             stars = c("*" = 0.05, "**" = 0.01, "***" = 0.001))
-# 
-# # now with "regular" standard-errors
-# png(
-#   "plots/efplot-ranked.png",
-#   width = 200,
-#   height = 150,
-#   units = 'mm',
-#   res = 200
-# )
-# est_std1 = summary(baseline1, se = "iid")
-# # #exponentiate and get percentage
-# # est_std1$coefficients <- (exp(est_std1$coefficients) -1)*100
-# coefplot(est_std1, 
-#          dict = c(twitblue="Paid verification", musk = "Musk acquisition"),
-#          keep = c("Paid verification", "Musk acquisition"),
-#          x.shift = -.2,
-#          add = F, pch=15, ylim = c(0,.8), main = "Effect on user engagement",
-#          lab.cex = 1.25, pt.cex = 2, cex.axis = 2)
-# 
-# est_std2 = summary(baseline2, se = "iid")
-# coefplot(est_std2, 
-#                   dict = c(twitblue="Paid verification", musk = "Musk acquisition"),
-#                   keep = c("Paid verification", "Musk acquisition"),
-#                   x.shift = .2,
-#          add = T, col = 2, pch=15, ylim = c(0,.8),
-#          lab.cex = 1.25, pt.cex = 2)
-# 
-# legend("topright", col = 1:2, pch = 20, lwd = 1,
-#        legend = c("Retweets", "Likes"), cex = 1)
-# dev.off() 
+saveRDS(tdf_tweetdays_public, "public_data/tdf_tweetdays-ranked.rds")
 
 # plot all data
 tdfsums <- tdf %>%

@@ -5,27 +5,61 @@ library(fixest)
 library(modelsummary)
 library(scales)
 
+##change variable "username" to "userid" if using public repo data
+
 tdf_tweetdays <- readRDS("data/processed/tdf_tweetdays-verified.rds")
 
-
-tdf_tweetdays$muskblue <- ifelse(tdf_tweetdays$date>="2022-10-27" & tdf_tweetdays$date <"2022-10-30", 1,
-                                 ifelse(tdf_tweetdays$date>="2022-10-30" & tdf_tweetdays$date <"2022-11-02", 2,
-                                        ifelse(tdf_tweetdays$date>="2022-11-02" & tdf_tweetdays$date <"2022-11-05", 3,
-                                               ifelse(tdf_tweetdays$date>="2022-11-05" & tdf_tweetdays$date <"2022-11-08", 4,
-                                                      ifelse(tdf_tweetdays$date>="2022-11-08" & tdf_tweetdays$date <"2022-11-11", 5,
-                                                             ifelse(tdf_tweetdays$date>="2022-11-11" & tdf_tweetdays$date <"2022-11-14", 6,
-                                                                    ifelse(tdf_tweetdays$date>="2022-11-14" & tdf_tweetdays$date <"2022-11-17", 7,
-                                                                           ifelse(tdf_tweetdays$date>="2022-11-17" & tdf_tweetdays$date <"2022-11-20", 8,
-                                                                                  ifelse(tdf_tweetdays$date>="2022-11-20" & tdf_tweetdays$date <"2022-11-23", 9,
-                                                                                         ifelse(tdf_tweetdays$date>="2022-11-23" & tdf_tweetdays$date <"2022-11-26", 10,
-                                                                                                ifelse(tdf_tweetdays$date>="2022-11-26" & tdf_tweetdays$date <"2022-11-29", 11, 0)))))))))))
+tdf_tweetdays$muskblue <- ifelse(tdf_tweetdays$date>="2022-10-28" & tdf_tweetdays$date <"2022-10-31", 1,
+                                 ifelse(tdf_tweetdays$date>="2022-10-31" & tdf_tweetdays$date <"2022-11-03", 2,
+                                        ifelse(tdf_tweetdays$date>="2022-11-03" & tdf_tweetdays$date <"2022-11-06", 3,
+                                               ifelse(tdf_tweetdays$date>="2022-11-06" & tdf_tweetdays$date <"2022-11-09", 4,
+                                                      ifelse(tdf_tweetdays$date>="2022-11-09" & tdf_tweetdays$date <"2022-11-12", 5,
+                                                             ifelse(tdf_tweetdays$date>="2022-11-12" & tdf_tweetdays$date <"2022-11-15", 6,
+                                                                    ifelse(tdf_tweetdays$date>="2022-11-15" & tdf_tweetdays$date <"2022-11-18", 7,
+                                                                           ifelse(tdf_tweetdays$date>="2022-11-18" & tdf_tweetdays$date <"2022-11-21", 8,
+                                                                                  ifelse(tdf_tweetdays$date>="2022-11-21" & tdf_tweetdays$date <"2022-11-24", 9,
+                                                                                         ifelse(tdf_tweetdays$date>="2022-11-24" & tdf_tweetdays$date <"2022-11-27", 10, 0))))))))))
 tdf_tweetdays$muskblue <- as.factor(tdf_tweetdays$muskblue)
 
-baseline1 <- feols(log(sum_rts) ~ muskblue + log(sum_tweets) |
+tdf_tweetdays$pmusk <- ifelse(tdf_tweetdays$date=="2022-10-27", 1, 0)
+tdf_tweetdays$muskacq <- ifelse(tdf_tweetdays$date>="2022-10-27", 1, 0)
+
+
+baseline1 <- feols(log(sum_rts) ~ muskacq + log(sum_tweets) |
                      username,
                    data = tdf_tweetdays)
 
-baseline2 <- feols(log(sum_likes) ~ muskblue + log(sum_tweets) |
+baseline2 <- feols(log(sum_likes) ~ muskacq + log(sum_tweets) |
+                     username,
+                   data = tdf_tweetdays)
+
+
+gm <- tibble::tribble(
+  ~raw,        ~clean,          ~fmt,
+  # "r.squared", "R2",            2,
+  "nobs",      "Observations",             0,
+  "FE: username",  "User fixed effect",      0)
+
+modelsummary(models = list("Retweets" = baseline1,
+                           "Likes" = baseline2),
+             output = "latex",
+             coef_rename = c(
+               "muskacq" = "Post-Musk acquisition",
+               "log(sum_rts)" = "Retweets (logged sum)",
+               "log(sum_tweets)" = "Tweets (logged sum)"),
+             gof_map = gm,
+             notes = list('Outcomes are logged retweets and likes',
+                          'Standard errors clustered by user'),
+             title = 'Effect of Musk acquisition on general user engagement',
+             stars = c("*" = 0.05, "**" = 0.01, "***" = 0.001))
+
+
+
+baseline3 <- feols(log(sum_rts) ~ pmusk + muskblue + log(sum_tweets) |
+                     username,
+                   data = tdf_tweetdays)
+
+baseline4 <- feols(log(sum_likes) ~ pmusk +  muskblue + log(sum_tweets) |
                      username,
                    data = tdf_tweetdays)
 
@@ -36,32 +70,34 @@ png(
   units = 'mm',
   res = 200
 )
-est_std1 = summary(baseline1, se = "iid")
+est_std1 = summary(baseline3, se = "iid")
 # #exponentiate and get percentage
 # est_std1$coefficients <- (exp(est_std1$coefficients) -1)*100
 coefplot(est_std1, 
-         dict = c(muskblue1="Oct 27-Oct 30", muskblue2 = "Oct 30-Nov 02", muskblue3="Nov 02-Nov 05", muskblue4 = "Nov 05-Nov 08",
-                  muskblue5="Nov 08-Nov 11", muskblue6 = "Nov 11-Nov 14", muskblue7="Nov 14-Nov 17", muskblue8 = "Nov 17-Nov 20", 
-                  muskblue9="Nov 20-Nov 23", muskblue10 = "Nov 23-Nov 26", muskblue11="Nov 26-Nov 29"),
-         keep = c("Oct 27-Oct 30","Oct 30-Nov 02","Nov 02-Nov 05","Nov 05-Nov 08",
-                  "Nov 08-Nov 11","Nov 11-Nov 14","Nov 14-Nov 17","Nov 17-Nov 20",
-                  "Nov 20-Nov 23","Nov 23-Nov 26","Nov 26-Nov 29"),
-         ylim= c(0,1),
+         dict = c(muskblue1="Oct 28-Oct 31", muskblue2 = "Oct 31-Nov 03", muskblue3="Nov 03-Nov 06", muskblue4 = "Nov 06-Nov 09",
+                  muskblue5="Nov 09-Nov 12", muskblue6 = "Nov 12-Nov 15", muskblue7="Nov 15-Nov 18", muskblue8 = "Nov 18-Nov 21", 
+                  muskblue9="Nov 21-Nov 24", muskblue10 = "Nov 24-Nov 27"),
+         keep = c("Oct 28-Oct 31","Oct 31-Nov 03","Nov 03-Nov 06","Nov 06-Nov 09",
+                  "Nov 09-Nov 12","Nov 12-Nov 15","Nov 15-Nov 18","Nov 18-Nov 21",
+                  "Nov 21-Nov 24","Nov 24-Nov 27"),
+         ylim= c(0,1.5),
          add = F, pch=15, main = "Effect on user post engagement",
-         lab.cex = 1.25, pt.cex = 2, cex.axis = 2)
+         lab.cex = .75, pt.cex = 1.5, cex.axis = 1)
 
 
-est_std1 = summary(baseline2, se = "iid")
+est_std1 = summary(baseline4, se = "iid")
+# #exponentiate and get percentage
+# est_std1$coefficients <- (exp(est_std1$coefficients) -1)*100
 coefplot(est_std1, 
-         dict = c(muskblue1="Oct 27-Oct 30", muskblue2 = "Oct 30-Nov 02", muskblue3="Nov 02-Nov 05", muskblue4 = "Nov 05-Nov 08",
-                  muskblue5="Nov 08-Nov 11", muskblue6 = "Nov 11-Nov 14", muskblue7="Nov 14-Nov 17", muskblue8 = "Nov 17-Nov 20", 
-                  muskblue9="Nov 20-Nov 23", muskblue10 = "Nov 23-Nov 26", muskblue11="Nov 26-Nov 29"),
-         keep = c("Oct 27-Oct 30","Oct 30-Nov 02","Nov 02-Nov 05","Nov 05-Nov 08",
-                  "Nov 08-Nov 11","Nov 11-Nov 14","Nov 14-Nov 17","Nov 17-Nov 20",
-                  "Nov 20-Nov 23","Nov 23-Nov 26","Nov 26-Nov 29"),
-         ylim= c(0,1),
+         dict = c(muskblue1="Oct 28-Oct 31", muskblue2 = "Oct 31-Nov 03", muskblue3="Nov 03-Nov 06", muskblue4 = "Nov 06-Nov 09",
+                  muskblue5="Nov 09-Nov 12", muskblue6 = "Nov 12-Nov 15", muskblue7="Nov 15-Nov 18", muskblue8 = "Nov 18-Nov 21", 
+                  muskblue9="Nov 21-Nov 24", muskblue10 = "Nov 24-Nov 27"),
+         keep = c("Oct 28-Oct 31","Oct 31-Nov 03","Nov 03-Nov 06","Nov 06-Nov 09",
+                  "Nov 09-Nov 12","Nov 12-Nov 15","Nov 15-Nov 18","Nov 18-Nov 21",
+                  "Nov 21-Nov 24","Nov 24-Nov 27"),
+         ylim= c(0,1.5),
          add = T, col = 2, pch=15,
-         lab.cex = 1.25, pt.cex = 2)
+         lab.cex = .75, pt.cex = 1.5, cex.axis = 1)
 
 legend("topright", col = 1:2, pch = 20, lwd = 1,
        legend = c("Retweets", "Likes"), cex = .8)

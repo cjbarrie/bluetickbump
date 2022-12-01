@@ -8,6 +8,11 @@ library(tsibble)
 library(modelsummary)
 
 tdf <- read_fst("data/processed/blue-verified-tweetsALL.fst")
+ids <- tdf %>%
+  pull(tweet_id)
+write.table(ids, "public_data/tweetIDs-verified.txt", col.names = F, row.names = F,
+            quote = F)
+
 tdf$username <- tdf$user_username
 
 #remove accounts in ranked list for all verified analysis
@@ -32,12 +37,24 @@ tdf_tweetdays <- tdf %>%
 
 tdf_tweetdays <- tdf_tweetdays %>%
   mutate(yearmon = as.Date(as.yearmon(date)),
-         yearwk = as.Date(yearweek(date)))
+         yearwk = as.Date(yearweek(date))) %>%
+  filter(date <= "2022-11-27")
 
 tdf_tweetdays$musk <- ifelse(tdf_tweetdays$date>="2022-10-27" & tdf_tweetdays$date <"2022-11-09", 1, 0)
 tdf_tweetdays$twitblue <- ifelse(tdf_tweetdays$date>="2022-11-09", 1, 0)
 
 saveRDS(tdf_tweetdays, "data/processed/tdf_tweetdays-verified.rds")
+
+tdf_tweetdays_public <- tdf_tweetdays
+
+tdf_tweetdays_public$userid <- sapply(tdf_tweetdays_public$username, 
+                                      digest::digest, 
+                                      algo = "md5")
+
+tdf_tweetdays_public <- tdf_tweetdays_public %>%
+  select(-username)
+
+saveRDS(tdf_tweetdays_public, "public_data/tdf_tweetdays-verified.rds")
 
 # tdf_tweetdays$muskblue <- ifelse(tdf_tweetdays$date>="2022-10-27" & tdf_tweetdays$date <"2022-11-03", 1,
 #                                  ifelse(tdf_tweetdays$date>="2022-11-03" & tdf_tweetdays$date <"2022-11-10", 2,
