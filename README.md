@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 # muskboost
 
 Repo of analysis to determine boost provided by newly blue-ticked
@@ -37,4 +31,4 @@ the following data public:
     [here](https://www.dropbox.com/s/kntsws2z6jqkkqk/tweetIDs-ranked.txt?dl=1)
 -   tweetIDs-verified.txt: tweet IDs of collected tweets for general
     users. Download
-    [here](https://www.dropbox.com/s/fbfuq8inut6ks33/tdf_tweetdays-verified.rds?dl=1)
+    [here](https://www.dropbox.com/s/h447ulgsxs383v3/tweetIDs-verified.txt?dl=1)
