@@ -18,6 +18,6 @@ Twitter ToS do not permit sharing of raw Twitter data. I am able to make the fol
 
 tdf_tweetdays-ranked.rds: panel dataset of retweets and likes for anonymized contentious users
 tdf_tweetdays-verified.rds: panel dataset of retweets and likes for anonymized general users
-tweetIDs-ranked.txt: tweet IDs of collected tweets for contentious users
-tweetIDs-verified.txt: tweet IDs of collected tweets for general users
+tweetIDs-ranked.txt: tweet IDs of collected tweets for contentious users. Download [here](https://www.dropbox.com/s/kntsws2z6jqkkqk/tweetIDs-ranked.txt?dl=1)
+tweetIDs-verified.txt: tweet IDs of collected tweets for general users. Download [here](https://www.dropbox.com/s/fbfuq8inut6ks33/tdf_tweetdays-verified.rds?dl=1)
 

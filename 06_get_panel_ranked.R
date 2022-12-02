@@ -10,7 +10,7 @@ library(modelsummary)
 tdf <- read_fst("data/processed/blue-ranked-tweetsALL.fst")
 ids <- tdf %>%
   pull(tweet_id)
-write.table(ids, "public_data/tweetIDs-ranked.txt", col.names = F, row.names = F,
+write.table(ids, "data/tweetIDs-ranked.txt", col.names = F, row.names = F,
             quote = F)
 
 tdf$username <- tdf$user_username

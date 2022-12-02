@@ -10,7 +10,7 @@ library(modelsummary)
 tdf <- read_fst("data/processed/blue-verified-tweetsALL.fst")
 ids <- tdf %>%
   pull(tweet_id)
-write.table(ids, "public_data/tweetIDs-verified.txt", col.names = F, row.names = F,
+write.table(ids, "data/tweetIDs-verified.txt", col.names = F, row.names = F,
             quote = F)
 
 tdf$username <- tdf$user_username
